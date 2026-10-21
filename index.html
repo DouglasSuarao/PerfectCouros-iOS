@@ -94,6 +94,15 @@ body{padding-bottom:78px;background:#f3f3f0}.appHome{max-width:760px;margin:0 au
 })();
 </script>
 <meta name="theme-color" content="#20231c">
+<style id="ios-lista-fix">
+.pc-choice-btn{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;margin:5px 0 5px 6px;border:1px solid #aaa;border-radius:8px;background:#f3f3f3;color:#222;font-size:18px;vertical-align:middle;cursor:pointer}
+.pc-choice-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2147483646;display:flex;align-items:flex-end;justify-content:center}
+.pc-choice-panel{background:#fff;color:#111;border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:83dvh;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.pc-choice-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.pc-choice-head strong{font-size:18px}.pc-choice-close{font-size:16px;padding:10px;border:1px solid #bbb;background:#eee;border-radius:8px;color:#111}
+.pc-choice-filter{width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid #aaa;border-radius:8px;margin-bottom:10px;color:#111;background:#fff}
+.pc-choice-list{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;min-height:70px}.pc-choice-option{display:block;width:100%;text-align:left;padding:13px 10px;font-size:16px;border:0;border-bottom:1px solid #ddd;background:white;color:#111}
+.pc-choice-custom{margin-top:10px;border-radius:8px;padding:12px;border:1px solid #777;background:#eee;color:#111;font-size:16px}
+</style>
 </head>
 <body><div id="pcIosNotice" style="display:none;position:relative;z-index:10001;background:#fff4cc;color:#423000;border:2px solid #b58a18;border-radius:12px;padding:12px;margin:10px;font:15px Arial,sans-serif"><strong>IMPORTANTE — Teste no iPhone:</strong> a pré-visualização do arquivo no WhatsApp, Arquivos ou ChatGPT pode bloquear todos os botões. Abra esta página em um endereço HTTPS pelo Safari (por exemplo, GitHub Pages). Abrir apenas o arquivo .html não garante funcionamento do armazenamento nem dos botões.</div>
 <script>
@@ -953,6 +962,50 @@ document.addEventListener("DOMContentLoaded",function(){
     }catch(e){ alert('Arquivo de backup inválido ou não pôde ser lido.'); }
   };
   esperarAndroid();
+})();
+</script>
+<script id="ios-lista-fix-script">
+(function(){
+  function start(){
+    var inputs=document.querySelectorAll('input[list]');
+    Array.prototype.forEach.call(inputs,function(field){
+      var list=document.getElementById(field.getAttribute('list'));
+      if(!list||field.getAttribute('data-pc-ios-ready'))return;
+      field.setAttribute('data-pc-ios-ready','1');
+      var btn=document.createElement('button');btn.type='button';btn.className='pc-choice-btn';btn.textContent='▾';btn.setAttribute('aria-label','Mostrar opções de '+(field.id||'campo'));
+      field.insertAdjacentElement('afterend',btn);
+      btn.addEventListener('click',function(){show(field,list)});
+    });
+  }
+  function show(field,list){
+    var old=document.getElementById('pc-ios-options-modal');if(old)old.remove();
+    var modal=document.createElement('div');modal.className='pc-choice-modal';modal.id='pc-ios-options-modal';
+    var panel=document.createElement('div');panel.className='pc-choice-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+    var header=document.createElement('div');header.className='pc-choice-head';
+    var label=document.createElement('strong');label.textContent='Selecione uma opção';
+    var close=document.createElement('button');close.type='button';close.className='pc-choice-close';close.textContent='Fechar';
+    header.appendChild(label);header.appendChild(close);
+    var filter=document.createElement('input');filter.type='search';filter.className='pc-choice-filter';filter.placeholder='Buscar opção...';filter.setAttribute('aria-label','Buscar opção');
+    var choices=document.createElement('div');choices.className='pc-choice-list';
+    var custom=document.createElement('button');custom.type='button';custom.className='pc-choice-custom';custom.textContent='Digitar outro valor';
+    panel.appendChild(header);panel.appendChild(filter);panel.appendChild(choices);panel.appendChild(custom);modal.appendChild(panel);document.body.appendChild(modal);
+    function dismiss(){modal.remove()}
+    function choose(value){field.value=value;field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}));dismiss()}
+    function render(){
+      var query=filter.value.toLocaleLowerCase();choices.textContent='';var count=0;
+      Array.prototype.forEach.call(list.querySelectorAll('option'),function(opt){
+        var value=opt.value||opt.textContent||'';
+        if(value.toLocaleLowerCase().indexOf(query)<0)return;
+        var b=document.createElement('button');b.type='button';b.className='pc-choice-option';b.textContent=value;b.addEventListener('click',function(){choose(value)});choices.appendChild(b);count++;
+      });
+      if(!count){var empty=document.createElement('p');empty.textContent='Nenhuma opção encontrada. Você pode digitar outro valor.';choices.appendChild(empty)}
+    }
+    filter.addEventListener('input',render);close.addEventListener('click',dismiss);
+    custom.addEventListener('click',function(){dismiss();field.focus()});
+    modal.addEventListener('click',function(e){if(e.target===modal)dismiss()});
+    render();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
 </body>
